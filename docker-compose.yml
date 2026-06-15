@@ -1,0 +1,10 @@
+services:
+  trip-app-back:
+    build: .
+    container_name: trip-app-back
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5030:5030"
+    volumes:
+      - ./storage/uploads:/app/storage/uploads

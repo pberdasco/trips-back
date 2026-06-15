@@ -1,0 +1,37 @@
+{
+  "name": "trip-app-back",
+  "version": "0.1.0",
+  "description": "Backend para Trip App Europa 2026",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "Netrona.xyz",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "NODE_ENV=production node src/server.js",
+    "start:docker": "node src/server.js",
+    "migrate": "node sql/aplicarMigraciones.js",
+    "migrate:dry": "node sql/aplicarMigraciones.js --dry-run",
+    "import:json": "node scripts/import-json-to-db.js",
+    "export:json": "node scripts/export-db-to-json.js",
+    "normalize:todos": "node scripts/normalize-db-todo-ids.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.3",
+    "nanoid": "^5.1.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "eslint": "^9.33.0",
+    "globals": "^16.3.0"
+  },
+  "packageManager": "pnpm@10.14.0"
+}

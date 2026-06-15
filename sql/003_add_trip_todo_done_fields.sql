@@ -1,0 +1,3 @@
+ALTER TABLE trip_todos
+  ADD COLUMN done_note VARCHAR(1000) NULL AFTER notes,
+  ADD COLUMN done_at TIMESTAMP NULL AFTER done_note;
