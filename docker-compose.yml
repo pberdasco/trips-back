@@ -1,10 +1,56 @@
 services:
+  # ==================
+  # PRODUCCION
+  # ==================
   trip-app-back:
-    build: .
+    profiles: ["prod"]
     container_name: trip-app-back
-    restart: unless-stopped
-    env_file: .env
-    ports:
-      - "5030:5030"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-prod
+    env_file:
+      - .env.prod
+    expose:
+      - "5030"
     volumes:
       - ./storage/uploads:/app/storage/uploads
+    networks:
+      appnet:
+        ipv4_address: 172.18.0.5
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================
+  # DEV / TEST EN VPS
+  # ==================
+  trip-app-back-dev:
+    profiles: ["dev"]
+    container_name: trip-app-back-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-test
+    env_file:
+      - .env.dev
+    expose:
+      - "5030"
+    volumes:
+      - ./storage/uploads:/app/storage/uploads
+    networks:
+      appnet:
+        ipv4_address: 172.18.0.6
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+networks:
+  appnet:
+    external: true
