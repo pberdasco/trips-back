@@ -17,7 +17,7 @@ services:
       - ./storage/uploads:/app/storage/uploads
     networks:
       appnet:
-        ipv4_address: 172.18.0.5
+        ipv4_address: 172.18.0.7
     restart: unless-stopped
     logging:
       driver: "json-file"
