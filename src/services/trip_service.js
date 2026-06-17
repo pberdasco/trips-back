@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { pool, dbErrorMsg, withTransaction } from '../database/db.js';
+import { normalizeDayTodos } from '../utils/tripDataNormalize.js';
 
 const tripCode = () => process.env.TRIP_CODE || 'europa-2026';
 
@@ -33,6 +34,14 @@ const newLinkSchema = z.object({
   label: z.string().min(1),
   url: z.string().min(1)
 });
+
+const editableDaySchema = z.object({
+  id: z.string().min(1),
+  date: z.string().min(1),
+  route: z.string().min(1),
+  sleepsIn: z.string().min(1),
+  activities: z.array(z.record(z.string(), z.unknown())).optional()
+}).passthrough();
 
 export async function getAllDays () {
   const [rows] = await pool.query(
@@ -114,7 +123,7 @@ export async function createGlobalTodo (payload, changedBy) {
   return getGlobalTodoById(id);
 }
 
-export async function updateTodoStatus (todoId, payload, changedBy) {
+export async function updateTodoStatus (todoId, payload, changedBy, requestId = 'no-id') {
   const { status, doneNote } = todoPatchSchema.parse(payload);
 
   return withTransaction(async conn => {
@@ -140,10 +149,10 @@ export async function updateTodoStatus (todoId, payload, changedBy) {
 
     await saveDayWithBackup(conn, dayId, day, 'update-todo-status', changedBy, found.previousJson);
     return { todo, day, scope: 'activity' };
-  });
+  }, requestId);
 }
 
-export async function addTodoToActivity (dayId, activityId, payload, changedBy) {
+export async function addTodoToActivity (dayId, activityId, payload, changedBy, requestId = 'no-id') {
   const todo = {
     id: `todo-${nanoid(12)}`,
     ...newTodoSchema.parse(payload)
@@ -159,10 +168,10 @@ export async function addTodoToActivity (dayId, activityId, payload, changedBy) 
 
     await saveDayWithBackup(conn, dayId, day, 'add-todo', changedBy);
     return { todo, day };
-  });
+  }, requestId);
 }
 
-export async function updateActivityTodo (dayId, activityId, todoId, payload, changedBy) {
+export async function updateActivityTodo (dayId, activityId, todoId, payload, changedBy, requestId = 'no-id') {
   const patch = editTodoSchema.parse(payload);
 
   return withTransaction(async conn => {
@@ -181,10 +190,10 @@ export async function updateActivityTodo (dayId, activityId, todoId, payload, ch
 
     await saveDayWithBackup(conn, dayId, day, 'update-activity-todo', changedBy);
     return { todo, day };
-  });
+  }, requestId);
 }
 
-export async function addLinkToActivity (dayId, activityId, payload, changedBy) {
+export async function addLinkToActivity (dayId, activityId, payload, changedBy, requestId = 'no-id') {
   const link = {
     id: `link-${nanoid(12)}`,
     ...newLinkSchema.parse(payload)
@@ -200,7 +209,24 @@ export async function addLinkToActivity (dayId, activityId, payload, changedBy) 
 
     await saveDayWithBackup(conn, dayId, day, 'add-link', changedBy);
     return { link, day };
-  });
+  }, requestId);
+}
+
+export async function replaceTripDay (dayId, payload, changedBy, requestId = 'no-id') {
+  const parsedDay = editableDaySchema.parse(payload);
+
+  if (parsedDay.id !== dayId) {
+    throw dbErrorMsg(400, 'El id del JSON no coincide con el dia editado');
+  }
+
+  validateEditableDay(parsedDay);
+  const { day } = normalizeDayTodos(parsedDay);
+
+  return withTransaction(async conn => {
+    await getDayForUpdate(conn, dayId);
+    await saveDayWithBackup(conn, dayId, day, 'replace-day-json', changedBy);
+    return day;
+  }, requestId);
 }
 
 async function getDocuments () {
@@ -299,6 +325,36 @@ function findTodo (day, todoId) {
     if (todo) return todo;
   }
   return null;
+}
+
+function validateEditableDay (day) {
+  for (const activity of day.activities || []) {
+    if (!activity.id || typeof activity.id !== 'string') {
+      throw dbErrorMsg(400, 'Cada actividad debe tener id');
+    }
+    if (!activity.title || typeof activity.title !== 'string') {
+      throw dbErrorMsg(400, `La actividad ${activity.id} debe tener title`);
+    }
+    if (activity.todos !== undefined) {
+      if (!Array.isArray(activity.todos)) {
+        throw dbErrorMsg(400, `Los pendientes de ${activity.id} deben ser un array`);
+      }
+      for (const todo of activity.todos) {
+        if (typeof todo !== 'object' || todo === null || Array.isArray(todo)) {
+          throw dbErrorMsg(400, `Cada pendiente de ${activity.id} debe ser un objeto con text, status y dueDate opcional`);
+        }
+        if (!todo.text || typeof todo.text !== 'string') {
+          throw dbErrorMsg(400, `Cada pendiente de ${activity.id} debe tener text`);
+        }
+      }
+    }
+    if (activity.links !== undefined && !Array.isArray(activity.links)) {
+      throw dbErrorMsg(400, `Los links de ${activity.id} deben ser un array`);
+    }
+    if (activity.logistics !== undefined && (typeof activity.logistics !== 'object' || activity.logistics === null || Array.isArray(activity.logistics))) {
+      throw dbErrorMsg(400, `La logistica de ${activity.id} debe ser un objeto`);
+    }
+  }
 }
 
 function parseJson (value) {

@@ -10,7 +10,8 @@ import {
   getTodos,
   getTripData,
   patchActivityTodo,
-  patchTodo
+  patchTodo,
+  putDay
 } from '../controllers/trip_controller.js';
 
 export const tripRouter = Router();
@@ -23,6 +24,7 @@ tripRouter.get('/todos', getTodos);
 
 tripRouter.post('/todos', requireWriteAccess, addGlobalTodo);
 tripRouter.patch('/todos/:todoId', requireWriteAccess, patchTodo);
+tripRouter.put('/days/:dayId', requireWriteAccess, putDay);
 tripRouter.post('/days/:dayId/activities/:activityId/todos', requireWriteAccess, addActivityTodo);
 tripRouter.patch('/days/:dayId/activities/:activityId/todos/:todoId', requireWriteAccess, patchActivityTodo);
 tripRouter.post('/days/:dayId/activities/:activityId/links', requireWriteAccess, addActivityLink);

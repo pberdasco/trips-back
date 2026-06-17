@@ -7,6 +7,7 @@ import {
   getFullTripData,
   getGlobalTodos,
   getTripDay,
+  replaceTripDay,
   updateActivityTodo,
   updateTodoStatus
 } from '../services/trip_service.js';
@@ -63,7 +64,7 @@ export async function addGlobalTodo (req, res, next) {
 export async function patchTodo (req, res, next) {
   try {
     const changedBy = req.user?.username || 'api';
-    res.json(await updateTodoStatus(req.params.todoId, req.body, changedBy));
+    res.json(await updateTodoStatus(req.params.todoId, req.body, changedBy, req.id));
   } catch (error) {
     next(error);
   }
@@ -72,7 +73,7 @@ export async function patchTodo (req, res, next) {
 export async function addActivityTodo (req, res, next) {
   try {
     const changedBy = req.user?.username || 'api';
-    res.status(201).json(await addTodoToActivity(req.params.dayId, req.params.activityId, req.body, changedBy));
+    res.status(201).json(await addTodoToActivity(req.params.dayId, req.params.activityId, req.body, changedBy, req.id));
   } catch (error) {
     next(error);
   }
@@ -86,7 +87,8 @@ export async function patchActivityTodo (req, res, next) {
       req.params.activityId,
       req.params.todoId,
       req.body,
-      changedBy
+      changedBy,
+      req.id
     ));
   } catch (error) {
     next(error);
@@ -96,7 +98,16 @@ export async function patchActivityTodo (req, res, next) {
 export async function addActivityLink (req, res, next) {
   try {
     const changedBy = req.user?.username || 'api';
-    res.status(201).json(await addLinkToActivity(req.params.dayId, req.params.activityId, req.body, changedBy));
+    res.status(201).json(await addLinkToActivity(req.params.dayId, req.params.activityId, req.body, changedBy, req.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function putDay (req, res, next) {
+  try {
+    const changedBy = req.user?.username || 'api';
+    res.json(await replaceTripDay(req.params.dayId, req.body, changedBy, req.id));
   } catch (error) {
     next(error);
   }

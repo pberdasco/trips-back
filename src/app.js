@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { routers } from './routersIndex.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { requestLogger } from './middleware/requestLogger.js';
 import { loadEnv } from './config/env.js';
 
 loadEnv();
@@ -11,6 +12,7 @@ const app = express();
 
 const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()).filter(Boolean) || [];
 
+app.use(requestLogger);
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());

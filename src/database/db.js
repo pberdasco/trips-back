@@ -10,7 +10,9 @@ export const pool = createPool({
   database: process.env.DB_DATABASE,
   port: Number(process.env.DB_PORT || 3306),
   waitForConnections: true,
-  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10)
+  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
 export function dbErrorMsg (status, message) {
@@ -19,7 +21,7 @@ export function dbErrorMsg (status, message) {
   return error;
 }
 
-export async function withTransaction (run) {
+export async function withTransaction (run, requestId = 'no-id') {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -27,7 +29,12 @@ export async function withTransaction (run) {
     await conn.commit();
     return result;
   } catch (error) {
-    await conn.rollback();
+    console.warn(`[req ${requestId}] transaction failed: ${error.message}`);
+    try {
+      await conn.rollback();
+    } catch (rollbackError) {
+      console.error(`[req ${requestId}] transaction rollback failed: ${rollbackError.message}`);
+    }
     throw error;
   } finally {
     conn.release();
