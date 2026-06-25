@@ -11,6 +11,8 @@ services:
       target: runtime-prod
     env_file:
       - .env.prod
+    group_add:
+      - "1002"
     expose:
       - "5030"
     volumes:
@@ -38,6 +40,8 @@ services:
       target: runtime-test
     env_file:
       - .env.dev
+    group_add:
+      - "1002"
     expose:
       - "5030"
     volumes:
