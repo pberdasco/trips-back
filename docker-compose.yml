@@ -15,6 +15,7 @@ services:
       - "5030"
     volumes:
       - ./storage/uploads:/app/storage/uploads
+      - /opt/static-sites/trips:/opt/static-sites/trips
     networks:
       appnet:
         ipv4_address: 172.18.0.7
@@ -41,6 +42,7 @@ services:
       - "5030"
     volumes:
       - ./storage/uploads:/app/storage/uploads
+      - /opt/static-sites/trips:/opt/static-sites/trips
     networks:
       appnet:
         ipv4_address: 172.18.0.6
