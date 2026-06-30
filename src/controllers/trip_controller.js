@@ -7,6 +7,7 @@ import {
   getFullTripData,
   getGlobalTodos,
   getTripDay,
+  replaceTripCity,
   replaceTripDay,
   updateActivityTodo,
   updateTodoStatus
@@ -108,6 +109,14 @@ export async function putDay (req, res, next) {
   try {
     const changedBy = req.user?.username || 'api';
     res.json(await replaceTripDay(req.params.dayId, req.body, changedBy, req.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function putCity (req, res, next) {
+  try {
+    res.json(await replaceTripCity(req.params.cityId, req.body));
   } catch (error) {
     next(error);
   }

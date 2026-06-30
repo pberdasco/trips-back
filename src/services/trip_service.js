@@ -43,6 +43,11 @@ const editableDaySchema = z.object({
   activities: z.array(z.record(z.string(), z.unknown())).optional()
 }).passthrough();
 
+const editableCitySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1)
+}).passthrough();
+
 export async function getAllDays () {
   const [rows] = await pool.query(
     'SELECT data_json FROM trip_days WHERE trip_code = ? ORDER BY sort_order',
@@ -227,6 +232,23 @@ export async function replaceTripDay (dayId, payload, changedBy, requestId = 'no
     await saveDayWithBackup(conn, dayId, day, 'replace-day-json', changedBy);
     return day;
   }, requestId);
+}
+
+export async function replaceTripCity (cityId, payload) {
+  const parsedCity = editableCitySchema.parse(payload);
+
+  if (parsedCity.id !== cityId) {
+    throw dbErrorMsg(400, 'El id del JSON no coincide con la ciudad editada');
+  }
+
+  const [result] = await pool.query(
+    'UPDATE trip_cities SET data_json = ? WHERE trip_code = ? AND id = ?',
+    [JSON.stringify(parsedCity), tripCode(), cityId]
+  );
+
+  if (result.affectedRows === 0) throw dbErrorMsg(404, 'Ciudad no encontrada');
+
+  return parsedCity;
 }
 
 async function getDocuments () {
